@@ -1,0 +1,38 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Maven / build output
+target/
+out/
+build/
+*.class
+*.jar
+*.war
+
+# Logs
+logs/
+*.log
+
+# Runtime file storage
+attachments/
+
+# Environment / secrets (never commit)
+.env
+.env.*
+!.env.example
+application-local.yaml
+application-local.properties
+
+# Local Postgres data volumes
+pgdata/
+pgdata-test/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Patch files
+*.patch
