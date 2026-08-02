@@ -6,19 +6,24 @@ import com.javarush.jira.profile.ProfileTo;
 import com.javarush.jira.profile.internal.model.Contact;
 import com.javarush.jira.profile.internal.model.Profile;
 
+import static com.javarush.jira.login.internal.web.UserTestData.GUEST_ID;
+import static com.javarush.jira.login.internal.web.UserTestData.USER_ID;
+
 import java.util.Collections;
 import java.util.Set;
 
 public class ProfileTestData {
     public static MatcherFactory.Matcher<Profile> PROFILE_MATCHER =
             MatcherFactory.usingIgnoringFieldsComparator(Profile.class, "user");
+    public static MatcherFactory.Matcher<ProfileTo> PROFILE_TO_MATCHER =
+            MatcherFactory.usingIgnoringFieldsComparator(ProfileTo.class, "lastLogin");
 
-    public static ProfileTo USER_PROFILE_TO = new ProfileTo(null,
+    public static ProfileTo USER_PROFILE_TO = new ProfileTo(USER_ID,
             Set.of("assigned", "overdue", "deadline"),
             Set.of(new ContactTo("skype", "userSkype"),
                     new ContactTo("mobile", "+01234567890"),
                     new ContactTo("website", "user.com")));
-    public static ProfileTo GUEST_PROFILE_EMPTY_TO = new ProfileTo(null,
+    public static ProfileTo GUEST_PROFILE_EMPTY_TO = new ProfileTo(GUEST_ID,
             Set.of(),
             Set.of());
 
