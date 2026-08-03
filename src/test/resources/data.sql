@@ -85,7 +85,10 @@ insert into ACTIVITY(AUTHOR_ID, TASK_ID, UPDATED, COMMENT, TITLE, DESCRIPTION, E
 values (1, 1, '2023-05-15 09:05:10', null, 'Data', null, 3, 'epic', 'in_progress', 'low'),
        (2, 1, '2023-05-15 12:25:10', null, 'Data', null, null, null, null, 'normal'),
        (1, 1, '2023-05-15 14:05:10', null, 'Data', null, 4, null, null, null),
-       (1, 2, '2023-05-15 12:05:10', null, 'Trees', 'Trees desc', 4, 'epic', 'in_progress', 'normal');
+       (1, 2, '2023-05-15 12:05:10', null, 'Trees', 'Trees desc', 4, 'epic', 'in_progress', 'normal'),
+       (1, 6, '2023-06-14 10:00:00', null, 'task-6', null, null, 'task', 'in_progress', null),
+       (1, 6, '2023-06-14 14:00:00', null, 'task-6', null, null, 'task', 'ready_for_review', null),
+       (1, 6, '2023-06-14 18:00:00', null, 'task-6', null, null, 'task', 'done', null);
 
 insert into USER_BELONG (OBJECT_ID, OBJECT_TYPE, USER_ID, USER_TYPE_CODE, STARTPOINT, ENDPOINT)
 values (1, 2, 2, 'task_developer', '2023-06-14 08:35:10', '2023-06-14 08:55:00'),

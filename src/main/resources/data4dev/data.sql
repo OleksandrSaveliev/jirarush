@@ -315,7 +315,6 @@ values ('Add role manager and filters in security', 'task', 'done', 1, 1, 1,
 alter
 sequence TASK_ID_SEQ restart with 1000;
 
----task 1------
 INSERT INTO ACTIVITY(AUTHOR_ID, TASK_ID, UPDATED, COMMENT, TITLE, DESCRIPTION, ESTIMATE, TYPE_CODE, STATUS_CODE,
                      PRIORITY_CODE)
 values (6, 1, '2023-05-15 09:05:10', null, 'Data', null, 3, 'epic', 'in_progress', 'low'),
@@ -324,4 +323,10 @@ values (6, 1, '2023-05-15 09:05:10', null, 'Data', null, 3, 'epic', 'in_progress
        (11, 118, '2023-05-16 10:05:10', null, 'UI tab of tasks', null, 4, 'task', 'in_progress', 'normal'),
        (5, 118, '2023-05-16 11:10:10', null, 'UI tab of tasks', null, null, null, null, 'high'),
        (11, 118, '2023-05-16 12:30:10', null, 'UI tab of tasks', null, 2, null, null, null);
+
+INSERT INTO ACTIVITY(AUTHOR_ID, TASK_ID, UPDATED, COMMENT, TITLE, DESCRIPTION, ESTIMATE, TYPE_CODE, STATUS_CODE,
+                     PRIORITY_CODE)
+values (1, 1, '2023-05-15 09:00:00', null, 'Work started', null, null, 'epic', 'in_progress', 'normal'),
+       (1, 1, '2023-05-15 14:00:00', null, 'Dev finished', null, null, 'epic', 'ready_for_review', 'normal'),
+       (1, 1, '2023-05-15 18:00:00', null, 'Testing finished', null, null, 'epic', 'done', 'normal');
 

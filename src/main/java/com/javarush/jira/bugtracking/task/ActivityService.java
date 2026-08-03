@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static com.javarush.jira.bugtracking.task.TaskUtil.getLatestValue;
 
@@ -18,6 +21,8 @@ public class ActivityService {
     private final TaskRepository taskRepository;
 
     private final Handlers.ActivityHandler handler;
+
+    private final ActivityRepository activityRepository;
 
     private static void checkBelong(HasAuthorId activity) {
         if (activity.getAuthorId() != AuthUser.authId()) {
@@ -51,6 +56,20 @@ public class ActivityService {
         checkBelong(activity);
         handler.delete(activity.id());
         updateTaskIfRequired(activity.getTaskId(), activity.getStatusCode(), activity.getTypeCode());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Duration> getTimeInWork(Long taskId) {
+        Optional<LocalDateTime> inProgress = activityRepository.findFirstByTaskIdAndStatusCodeOrderByUpdatedDesc(taskId, "in_progress");
+        Optional<LocalDateTime> readyForReview = activityRepository.findFirstByTaskIdAndStatusCodeOrderByUpdatedDesc(taskId, "ready_for_review");
+        return inProgress.flatMap(ip -> readyForReview.map(rfr -> Duration.between(ip, rfr)));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Duration> getTimeInTesting(Long taskId) {
+        Optional<LocalDateTime> readyForReview = activityRepository.findFirstByTaskIdAndStatusCodeOrderByUpdatedDesc(taskId, "ready_for_review");
+        Optional<LocalDateTime> done = activityRepository.findFirstByTaskIdAndStatusCodeOrderByUpdatedDesc(taskId, "done");
+        return readyForReview.flatMap(rfr -> done.map(d -> Duration.between(rfr, d)));
     }
 
     private void updateTaskIfRequired(long taskId, String activityStatus, String activityType) {

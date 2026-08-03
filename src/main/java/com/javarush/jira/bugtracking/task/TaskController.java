@@ -4,15 +4,19 @@ import com.javarush.jira.bugtracking.Handlers;
 import com.javarush.jira.bugtracking.UserBelong;
 import com.javarush.jira.bugtracking.UserBelongRepository;
 import com.javarush.jira.bugtracking.task.to.ActivityTo;
+import com.javarush.jira.bugtracking.task.to.TagTo;
 import com.javarush.jira.bugtracking.task.to.TaskTo;
 import com.javarush.jira.bugtracking.task.to.TaskToExt;
 import com.javarush.jira.bugtracking.task.to.TaskToFull;
 import com.javarush.jira.bugtracking.tree.ITreeNode;
+import com.javarush.jira.common.error.DataConflictException;
+import com.javarush.jira.common.error.NotFoundException;
 import com.javarush.jira.common.util.Util;
 import com.javarush.jira.login.AuthUser;
 import jakarta.annotation.Nullable;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import static com.javarush.jira.common.BaseHandler.createdResponse;
 
@@ -125,6 +130,20 @@ public class TaskController {
     public void unAssign(@PathVariable long id, @NotBlank @RequestParam String userType) {
         log.info("unassign user {} as {} from task {}", AuthUser.authId(), userType, id);
         taskService.unAssign(id, userType, AuthUser.authId());
+    }
+
+    @PostMapping(path = "/{id}/tags", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void addTag(@PathVariable long id, @Valid @RequestBody TagTo tagTo) {
+        log.info("add tag {} to task {}", tagTo.getTag(), id);
+        taskService.addTag(id, tagTo.getTag());
+    }
+
+    @DeleteMapping("/{id}/tags/{tag}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeTag(@PathVariable long id, @PathVariable @Size(min = 2, max = 32) String tag) {
+        log.info("remove tag {} from task {}", tag, id);
+        taskService.removeTag(id, tag);
     }
 
     @GetMapping("/{id}/comments")

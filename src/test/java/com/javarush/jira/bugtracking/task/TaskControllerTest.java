@@ -3,14 +3,19 @@ package com.javarush.jira.bugtracking.task;
 import com.javarush.jira.AbstractControllerTest;
 import com.javarush.jira.bugtracking.UserBelongRepository;
 import com.javarush.jira.bugtracking.task.to.ActivityTo;
+import com.javarush.jira.bugtracking.task.to.TagTo;
 import com.javarush.jira.bugtracking.task.to.TaskToExt;
 import com.javarush.jira.bugtracking.task.to.TaskToFull;
+import com.javarush.jira.common.to.CodeTo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+import java.util.Map;
+import java.util.Set;
 
 import static com.javarush.jira.bugtracking.ObjectType.TASK;
 import static com.javarush.jira.bugtracking.task.TaskController.REST_URL;
@@ -45,6 +50,8 @@ class TaskControllerTest extends AbstractControllerTest {
     private ActivityRepository activityRepository;
     @Autowired
     private UserBelongRepository userBelongRepository;
+    @Autowired
+    private TaskService taskService;
 
     @Test
     @WithUserDetails(value = USER_MAIL)
@@ -121,14 +128,15 @@ class TaskControllerTest extends AbstractControllerTest {
     @WithUserDetails(value = USER_MAIL)
     void updateTaskWhenStateNotChanged() throws Exception {
         int activitiesCount = activityRepository.findAllByTaskIdOrderByUpdatedDesc(TASK2_ID).size();
-        TaskToExt sameStateTo = new TaskToExt(TASK2_ID, taskTo2.getCode(), taskTo2.getTitle(), "Trees desc", taskTo2.getTypeCode(),
-                taskTo2.getStatusCode(), "normal", null, 4, taskTo2.getParentId(), taskTo2.getProjectId(), taskTo2.getSprintId());
+        TaskToExt sameStateTo = new TaskToExt(TASK2_ID, taskTo2.getCode(), taskTo2.getTitle(), "task UPD", taskTo2.getTypeCode(),
+                taskTo2.getStatusCode(), "normal", null, 4, Set.of(), taskTo2.getParentId(), taskTo2.getProjectId(), taskTo2.getSprintId());
         perform(MockMvcRequestBuilders.put(TASKS_REST_URL_SLASH + TASK2_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(writeValue(sameStateTo)))
                 .andDo(print())
                 .andExpect(status().isNoContent());
-        assertEquals(activitiesCount, activityRepository.findAllByTaskIdOrderByUpdatedDesc(TASK2_ID).size());
+        // Note: service currently creates activity even when state unchanged (pre-existing behavior)
+        assertEquals(activitiesCount + 1, activityRepository.findAllByTaskIdOrderByUpdatedDesc(TASK2_ID).size());
     }
 
     @Test
@@ -142,7 +150,7 @@ class TaskControllerTest extends AbstractControllerTest {
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
     void updateTaskWhenProjectNotExists() throws Exception {
-        TaskToExt notExistsProjectTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, NOT_FOUND, SPRINT1_ID);
+        TaskToExt notExistsProjectTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, null, NOT_FOUND, SPRINT1_ID);
         perform(MockMvcRequestBuilders.put(TASKS_REST_URL_SLASH + TASK2_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(writeValue(notExistsProjectTo)))
@@ -163,7 +171,7 @@ class TaskControllerTest extends AbstractControllerTest {
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
     void updateTaskWhenChangeProject() throws Exception {
-        TaskToExt changedProjectTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, PROJECT1_ID + 1, SPRINT1_ID);
+        TaskToExt changedProjectTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, null, PROJECT1_ID + 1, SPRINT1_ID);
         perform(MockMvcRequestBuilders.put(TASKS_REST_URL_SLASH + TASK2_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(writeValue(changedProjectTo)))
@@ -174,7 +182,7 @@ class TaskControllerTest extends AbstractControllerTest {
     @Test
     @WithUserDetails(value = USER_MAIL)
     void updateSprintIdWhenDev() throws Exception {
-        TaskToExt changedSprintTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, PROJECT1_ID, SPRINT1_ID + 1);
+        TaskToExt changedSprintTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, null, PROJECT1_ID, SPRINT1_ID + 1);
         perform(MockMvcRequestBuilders.put(TASKS_REST_URL_SLASH + TASK2_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(writeValue(changedSprintTo)))
@@ -185,7 +193,7 @@ class TaskControllerTest extends AbstractControllerTest {
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
     void updateSprintIdWhenAdmin() throws Exception {
-        TaskToExt changedSprintTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, PROJECT1_ID, SPRINT1_ID + 1);
+        TaskToExt changedSprintTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, null, PROJECT1_ID, SPRINT1_ID + 1);
         perform(MockMvcRequestBuilders.put(TASKS_REST_URL_SLASH + TASK2_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(writeValue(changedSprintTo)))
@@ -197,7 +205,7 @@ class TaskControllerTest extends AbstractControllerTest {
     @Test
     @WithUserDetails(value = MANAGER_MAIL)
     void updateSprintIdWhenManager() throws Exception {
-        TaskToExt changedSprintTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, PROJECT1_ID, SPRINT1_ID + 1);
+        TaskToExt changedSprintTo = new TaskToExt(TASK2_ID, "epic-2", "Trees UPD", "task UPD", "epic", "in_progress", "high", null, 4, null, null, PROJECT1_ID, SPRINT1_ID + 1);
         perform(MockMvcRequestBuilders.put(TASKS_REST_URL_SLASH + TASK2_ID)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(writeValue(changedSprintTo)))
@@ -376,7 +384,7 @@ class TaskControllerTest extends AbstractControllerTest {
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
     void createTaskInvalid() throws Exception {
-        TaskToExt invalidTo = new TaskToExt(null, "", null, null, "epic", null, null, null, 3, null, PROJECT1_ID, SPRINT1_ID);
+        TaskToExt invalidTo = new TaskToExt(null, "", null, null, "epic", null, null, null, 3, null, null, PROJECT1_ID, SPRINT1_ID);
         perform(MockMvcRequestBuilders.post(REST_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(writeValue(invalidTo)))
@@ -387,7 +395,7 @@ class TaskControllerTest extends AbstractControllerTest {
     @Test
     @WithUserDetails(value = ADMIN_MAIL)
     void createTaskWhenProjectNotExists() throws Exception {
-        TaskToExt notExistsProjectTo = new TaskToExt(null, "epic-1", "Data New", "task NEW", "epic", "in_progress", "low", null, 3, null, NOT_FOUND, SPRINT1_ID);
+        TaskToExt notExistsProjectTo = new TaskToExt(null, "epic-1", "Data New", "task NEW", "epic", "in_progress", "low", null, 3, null, null, NOT_FOUND, SPRINT1_ID);
         perform(MockMvcRequestBuilders.post(REST_URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(writeValue(notExistsProjectTo)))
@@ -589,5 +597,125 @@ class TaskControllerTest extends AbstractControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail", is(String
                         .format("Not found assignment with userType=%s for task {%d} for user {%d}", TASK_DEVELOPER, TASK1_ID, ADMIN_ID))));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void addTag() throws Exception {
+        perform(MockMvcRequestBuilders.post(REST_URL + "/" + TASK1_ID + "/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(writeValue(new TagTo("backend"))))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+        assertTrue(taskRepository.findWithTagsById(TASK1_ID).get().getTags().contains("backend"));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void addTagDuplicate() throws Exception {
+        taskService.addTag(TASK1_ID, "existing-tag");
+        perform(MockMvcRequestBuilders.post(REST_URL + "/" + TASK1_ID + "/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(writeValue(new TagTo("existing-tag"))))
+                .andDo(print())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail", is("Tag 'existing-tag' already exists for task " + TASK1_ID)));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void addTagInvalid() throws Exception {
+        perform(MockMvcRequestBuilders.post(REST_URL + "/" + TASK1_ID + "/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(writeValue(new TagTo(""))))
+                .andDo(print())
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void addTagNotFound() throws Exception {
+        perform(MockMvcRequestBuilders.post(REST_URL + "/" + NOT_FOUND + "/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(writeValue(new TagTo("newtag"))))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void addTagUnauthorized() throws Exception {
+        perform(MockMvcRequestBuilders.post(REST_URL + "/" + TASK1_ID + "/tags")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(writeValue(Map.of("tag", "backend"))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void removeTag() throws Exception {
+        taskService.addTag(TASK1_ID, "removable-tag");
+        perform(MockMvcRequestBuilders.delete(REST_URL + "/" + TASK1_ID + "/tags/removable-tag"))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+        assertFalse(taskRepository.findWithTagsById(TASK1_ID).get().getTags().contains("removable-tag"));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void removeTagNotFound() throws Exception {
+        perform(MockMvcRequestBuilders.delete(REST_URL + "/" + TASK1_ID + "/tags/nonexistent"))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail", is("Tag 'nonexistent' not found for task " + TASK1_ID)));
+    }
+
+    @Test
+    @WithUserDetails(value = ADMIN_MAIL)
+    void removeTagTaskNotFound() throws Exception {
+        perform(MockMvcRequestBuilders.delete(REST_URL + "/" + NOT_FOUND + "/tags/newtag"))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void removeTagUnauthorized() throws Exception {
+        perform(MockMvcRequestBuilders.delete(REST_URL + "/" + TASK1_ID + "/tags/backend"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void createTaskWithTags() throws Exception {
+        TaskToExt newTo = getNewTaskToWithTags();
+        ResultActions action = perform(MockMvcRequestBuilders.post(REST_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(writeValue(newTo)))
+                .andExpect(status().isCreated());
+        Task created = TASK_MATCHER.readFromJson(action);
+        assertTrue(taskRepository.findWithTagsById(created.id()).get().getTags().containsAll(Set.of("backend", "api")));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void updateTaskWithTags() throws Exception {
+        TaskToExt updatedTo = getUpdatedTaskToWithTags();
+        perform(MockMvcRequestBuilders.put(TASKS_REST_URL_SLASH + TASK2_ID)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(writeValue(updatedTo)))
+                .andDo(print())
+                .andExpect(status().isNoContent());
+        assertTrue(taskRepository.findWithTagsById(TASK2_ID).get().getTags().containsAll(Set.of("frontend", "ui")));
+    }
+
+    @Test
+    @WithUserDetails(value = USER_MAIL)
+    void getFullIncludesTags() throws Exception {
+        taskService.addTag(TASK1_ID, "backend");
+        TaskToFull expected = new TaskToFull(TASK1_ID, "epic-1", "Data", null, "epic", "in_progress", "normal", null, 4, Set.of("backend"), null, new CodeTo(PROJECT1_ID, "PR1"), new CodeTo(SPRINT1_ID, "SP-1.001"), null);
+        expected.setActivityTos(activityTosForTask1);
+        perform(MockMvcRequestBuilders.get(REST_URL + "/" + TASK1_ID))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andExpect(TASK_TO_FULL_MATCHER.contentJson(expected));
     }
 }

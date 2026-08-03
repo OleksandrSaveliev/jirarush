@@ -19,8 +19,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.javarush.jira.bugtracking.ObjectType.TASK;
 import static com.javarush.jira.bugtracking.task.TaskUtil.fillExtraFields;
@@ -39,6 +42,8 @@ public class TaskService {
     private final SprintRepository sprintRepository;
     private final TaskExtMapper extMapper;
     private final UserBelongRepository userBelongRepository;
+
+    private final ActivityService activityService;
 
     @Transactional
     public void changeStatus(long taskId, String statusCode) {
@@ -139,5 +144,42 @@ public class TaskService {
         if (!userType.equals(possibleUserType)) {
             throw new DataConflictException(String.format(assign ? CANNOT_ASSIGN : CANNOT_UN_ASSIGN, userType, task.getStatusCode()));
         }
+    }
+
+    public Optional<Duration> getTimeInWork(long taskId) {
+        return activityService.getTimeInWork(taskId);
+    }
+
+    public Optional<Duration> getTimeInTesting(long taskId) {
+        return activityService.getTimeInTesting(taskId);
+    }
+
+    @Transactional
+    public void addTag(long taskId, String tag) {
+        Assert.notNull(tag, "tag must not be null");
+        Task task = handler.getRepository().getExisted(taskId);
+        if (task.getTags().contains(tag)) {
+            throw new DataConflictException("Tag '" + tag + "' already exists for task " + taskId);
+        }
+        task.getTags().add(tag);
+        handler.getRepository().save(task);
+    }
+
+    @Transactional
+    public void removeTag(long taskId, String tag) {
+        Assert.notNull(tag, "tag must not be null");
+        Task task = handler.getRepository().getExisted(taskId);
+        if (!task.getTags().remove(tag)) {
+            throw new NotFoundException("Tag '" + tag + "' not found for task " + taskId);
+        }
+        handler.getRepository().save(task);
+    }
+
+    @Transactional
+    public void setTags(long taskId, Set<String> tags) {
+        Assert.notNull(tags, "tags must not be null");
+        Task task = handler.getRepository().getExisted(taskId);
+        task.setTags(new java.util.HashSet<>(tags));
+        handler.getRepository().save(task);
     }
 }

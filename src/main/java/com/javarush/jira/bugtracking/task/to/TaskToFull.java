@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 public class TaskToFull extends TaskToExt {
@@ -16,8 +17,9 @@ public class TaskToFull extends TaskToExt {
     List<ActivityTo> activityTos;
 
     public TaskToFull(Long id, String code, String title, String description, String typeCode, String statusCode, String priorityCode,
-                      LocalDateTime updated, Integer estimate, CodeTo parent, CodeTo project, CodeTo sprint, List<ActivityTo> activityTos) {
+                      LocalDateTime updated, Integer estimate, Set<String> tags, CodeTo parent, CodeTo project, CodeTo sprint, List<ActivityTo> activityTos) {
         super(id, code, title, description, typeCode, statusCode, priorityCode, updated, estimate,
+                tags,
                 parent == null ? null : parent.getId(), project.getId(), sprint == null ? null : sprint.getId());
         this.parent = parent;
         this.project = project;
